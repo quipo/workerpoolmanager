@@ -1,6 +1,6 @@
 # Task / worker pool manager in Go
 
-- Starts cli tasks automatically 
+- Start cli tasks automatically 
 - Maintain the desidered number of worker processes for each task
 - Handle automatic restarts when a worker dies or stalls
 
@@ -251,7 +251,17 @@ Note the signal handler (to catch SIGTERM signals and terminate gracefully) and 
 Contributions are welcome. Please open pull requests or issue reports!
 
 
+
+## Author
+
+Lorenzo Alberton
+
+* Web: [http://alberton.info](http://alberton.info)
+* Twitter: [@lorenzoalberton](https://twitter.com/lorenzoalberton)
+* Linkedin: [/in/lorenzoalberton](https://www.linkedin.com/in/lorenzoalberton)
+
+
 ## License
 
 This repository is Copyright (c) 2014 Lorenzo Alberton, All rights reserved.
-It is licensed under the MIT license. Please see the LICENSE file for applicable license terms.
+It is licensed under the MIT license. Please see the [LICENSE](LICENSE) file for applicable license terms.
