@@ -90,8 +90,6 @@ func (task *TaskManager) Run(commands chan Command, cmd Command) {
 		cmd.Success("Started task manager")
 	}
 
-	go cleanZombies()
-
 	// loop until asked to terminate
 	for task.Active {
 		select {
@@ -112,6 +110,8 @@ func (task *TaskManager) Run(commands chan Command, cmd Command) {
 			//task.logger.Println("TICKER")
 			go task.DetectStalledWorkers()
 			task.MaintainWorkerCardinality()
+
+			//go cleanZombies()
 
 			// periodically detect zombie processes
 			//case <-task.zombieDetectionTicker.C:

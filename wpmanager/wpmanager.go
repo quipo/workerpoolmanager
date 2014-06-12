@@ -49,5 +49,5 @@ func main() {
 	}
 
 	fmt.Println("Starting task manager runner...")
-	go taskRunner.Run()
+	taskRunner.Run()
 }
