@@ -23,9 +23,9 @@ type TaskManager struct {
 	Cmd          string   `json:"cmd,omitempty"`           // cli command
 	Args         []string `json:"args,omitempty"`          // cli args
 	Cardinality  int      `json:"cardinality,omitempty"`   // number of workers
-	StallTimeout int64    `json:"stall_timeout,omitempty"` // consider the worker dead if no keep-alives are received for this period
+	StallTimeout int64    `json:"stall_timeout,omitempty"` // consider the worker dead if no keep-alives are received for this period (ms)
 	AutoStart    bool     `json:"autostart,omitempty"`     // whether to start the task automatically
-	GracePeriod  int64    `json:"grace_period,omitempty"`  // grace period before killing a worker after being asked to stop
+	GracePeriod  int64    `json:"grace_period,omitempty"`  // grace period (ms) before killing a worker after being asked to stop
 	Active       bool
 	// private struct members
 	workers              map[int]Worker // metadata about worker processes
