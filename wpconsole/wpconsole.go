@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/bobappleyard/readline"
@@ -107,6 +108,7 @@ Loop:
 		}
 		fmt.Println(msg)
 	}
+	fmt.Println("") // newline before exit
 }
 
 func getHelp() string {
@@ -138,7 +140,7 @@ func getKeywords() []string {
 }
 
 func parseReadline(rl string) (command string, params string) {
-	parts := strings.SplitN(rl, " ", 2)
+	parts := regexp.MustCompile(`\s+`).Split(strings.TrimSpace(rl), 2)
 	if len(parts) == 1 {
 		parts = append(parts, "")
 	}
@@ -146,7 +148,7 @@ func parseReadline(rl string) (command string, params string) {
 }
 
 func parseParams(rl string) (taskname string, param string, value string) {
-	parts := strings.SplitN(rl, " ", 3)
+	parts := regexp.MustCompile(`\s+`).Split(strings.TrimSpace(rl), 3)
 	for len(parts) < 3 {
 		parts = append(parts, "")
 	}
