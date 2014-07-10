@@ -1,6 +1,6 @@
 # Task / worker pool manager in Go
 
-[![GoDoc](https://github.com/quipo/workerpoolmanager/tree/master/taskmanager?status.png)](http://godoc.org/github.com/quipo/workerpoolmanager/tree/master/taskmanager)
+[![GoDoc](https://godoc.org/github.com/quipo/workerpoolmanager/taskmanager?status.svg)](https://godoc.org/github.com/quipo/workerpoolmanager/taskmanager)
 
 - Start cli tasks automatically 
 - Maintain the desidered number of worker processes for each task
