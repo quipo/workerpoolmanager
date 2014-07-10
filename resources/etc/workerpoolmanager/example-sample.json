@@ -7,7 +7,7 @@
 		"stall_timeout": 10000,
 		"grace_period": 1000
 	},
-	"path": "./src/bitbucket.org/quipo/jobqueue/resources/examples/tasks/",
+	"path": "/path/to/example/tasks/",
 	"filesuffix": "Task.php",
 	"autotasks": {
 		"Example": {
