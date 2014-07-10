@@ -84,12 +84,12 @@ func (worker *Worker) IsProcessAlive() bool {
 	proc, err := os.FindProcess(worker.Pid)
 	if err != nil {
 		// on unix, FindProcess always returns true
-		//fmt.Println(err, worker.Pid, "returning false")
 		return false
 	}
-	//fmt.Println(proc.Signal(syscall.Signal(0)), worker.Pid)
-	err = proc.Signal(syscall.Signal(0))
-	return nil == err // syscall.ESRCH != err
+	return nil == proc.Signal(syscall.Signal(0))
+	//if syscall.ESRCH == proc.Signal(syscall.Signal(0)) {
+	//	processIsDead
+	//}
 }
 
 // CleanupProcessIfDead removes internal references to dead workers
