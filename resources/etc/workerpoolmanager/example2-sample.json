@@ -1,0 +1,17 @@
+{
+	"port": 8010,
+	"keepalives": {
+		"host": "localhost",
+		"inbound_port": 5591,
+		"internal_port": 5592,
+		"stall_timeout": 30000,
+		"grace_period": 1000
+	},
+	"path": "./src/bitbucket.org/quipo/jobqueue/resources/examples/tasks/",
+	"filesuffix": "Task",
+	"autotasks": {
+		"Go": {
+			"cardinality": 1
+		}
+	}
+}

@@ -1,0 +1,19 @@
+{
+	"port": 8010,
+	"keepalives": {
+		"host": "localhost",
+		"inbound_port": 5591,
+		"internal_port": 5592,
+		"stall_timeout": 2000,
+		"grace_period": 10
+	},
+	"path": "/bin",
+	"filesuffix": "",
+	"autotasks": {
+		"date": {
+			"cardinality": 1,
+			"cmd": "date",
+			"args": []
+		}
+	}
+}

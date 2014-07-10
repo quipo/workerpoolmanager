@@ -26,7 +26,6 @@ type TaskManagerConf struct {
 	Path       string                 `json:"path,omitempty"`
 	FileSuffix string                 `json:"filesuffix,omitempty"`
 	Port       int                    `json:"port,omitempty"`
-	Pidfile    string                 `json:"pidfile"`
 	Autotasks  map[string]TaskManager `json:"autotasks,omitempty"`
 	Keepalives KeepAliveConf          `json:"keepalives,omitempty"`
 }
@@ -81,8 +80,6 @@ func (taskRunner *TaskManagerRunner) Run() {
 	runtime.GOMAXPROCS(2*len(taskRunner.taskManagers) + 2)
 
 	logger := log.New(os.Stdout, "[TaskManagerRunner] ", log.Ldate|log.Ltime)
-
-	//TODO: check pidfile, create or die
 
 	logger.Println("Run()")
 
