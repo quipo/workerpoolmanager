@@ -31,7 +31,7 @@ go install github.com/quipo/workerpoolmanager/wpmanager
 go install github.com/quipo/workerpoolmanager/wpconsole
 ```
 
-Prepare a configuration file along the lines of [the provided example](resources/etc/wpmanager/example.json)
+Prepare a configuration file along the lines of [the provided example](resources/etc/workerpoolmanager/example-sample.json)
 
 Start the manager by pointing it to the configuration file:
 
@@ -167,7 +167,7 @@ View the GoDoc generated documentation [here](http://godoc.org/github.com/quipo/
 
 ### Worker examples
 
-The [/resources/examples/](src/resources/examples/) folder contains some worker examples in a few languages.
+The [resources/examples/](resources/examples/) folder contains some worker examples in a few languages.
 Note the signal handler (to catch SIGTERM signals and terminate gracefully) and the keep-alive messages (sent by the workers to the manager).
 
 ## TODO
