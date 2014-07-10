@@ -167,7 +167,7 @@ View the GoDoc generated documentation [here](http://godoc.org/github.com/quipo/
 
 ### Worker examples
 
-The [resources/examples/](resources/examples/) folder contains some worker examples in a few languages.
+The [resources/examples/tasks/](resources/examples/tasks/) folder contains some worker examples in a few languages.
 Note the signal handler (to catch SIGTERM signals and terminate gracefully) and the keep-alive messages (sent by the workers to the manager).
 
 ## TODO
@@ -178,6 +178,9 @@ Note the signal handler (to catch SIGTERM signals and terminate gracefully) and 
 * Test suite
 * Command.Type => constants instead of string literals
 * Send "stopping" message on keep-alive channel on worker exit
+* Alternate machine-readable (JSON) output for responses from the HTTP interface (via Accept headers)
+* Break out dead workers number into stalls, successful exits and bad exits
+* Add metrics - probably to [Riemann](http://riemann.io/)
 
 ## Design
 
