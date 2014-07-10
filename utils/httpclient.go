@@ -24,7 +24,7 @@ func (client *JobqueueHTTPClient) setDefaultURL() {
 
 // Open an HTTP connection to control the task manager runner
 func (client *JobqueueHTTPClient) Open(url string) (string, error) {
-	re1, err := regexp.Compile(`([hftps]+://)?([\w\.]+)?(:\d+)?(/[^\?]+)?(?:\?(.*))?`)
+	re1, err := regexp.Compile(`([hftps]+)?://([\w\.]+)?(:\d+)?(/[^\?]+)?(?:\?(.*))?`)
 	result := re1.FindAllStringSubmatch(url, -1)[0]
 	if nil != err {
 		return "", err
@@ -45,6 +45,7 @@ func (client *JobqueueHTTPClient) Open(url string) (string, error) {
 	if "" != result[5] {
 		client.URL.RawQuery = result[5]
 	}
+
 	return "Connected to " + client.URL.String(), err
 }
 
