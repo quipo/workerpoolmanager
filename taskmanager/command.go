@@ -1,6 +1,7 @@
 package taskmanager
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -9,7 +10,7 @@ import (
 // CommandReply is the type of a reply on the ReplyChannel for a Command.
 // It contains the successful response (string) or an error on command failure
 type CommandReply struct {
-	Reply string
+	Reply CommandResponse
 	Error error
 }
 
@@ -30,14 +31,14 @@ func (cmd Command) String() string {
 
 // Fail sends a Reply with a failure message
 func (cmd *Command) Fail(msg string) bool {
-	cmd.ReplyChannel <- CommandReply{Reply: "", Error: errors.New(msg)}
+	cmd.ReplyChannel <- CommandReply{Reply: &StringResponse{Value: ""}, Error: errors.New(msg)}
 	close(cmd.ReplyChannel)
 	return false
 }
 
 // Success sends a Reply with a success message
 func (cmd *Command) Success(msg string) bool {
-	cmd.ReplyChannel <- CommandReply{Reply: msg, Error: nil}
+	cmd.ReplyChannel <- CommandReply{Reply: &StringResponse{Value: msg}, Error: nil}
 	close(cmd.ReplyChannel)
 	return true
 }
@@ -56,7 +57,7 @@ func (cmd *Command) Broadcast(outChannels map[string]chan Command) bool {
 		out <- *cmd
 	}
 	if cnt == 0 {
-		replies <- CommandReply{Reply: "", Error: errors.New("no active tasks")}
+		replies <- CommandReply{Reply: &StringResponse{Value: ""}, Error: errors.New("no active tasks")}
 	}
 
 	// wait for all channels to reply
@@ -66,7 +67,7 @@ func (cmd *Command) Broadcast(outChannels map[string]chan Command) bool {
 			replies <- resp
 			cnt--
 		case <-time.After(10 * time.Second):
-			replies <- CommandReply{Reply: "", Error: errors.New("timeout")}
+			replies <- CommandReply{Reply: &StringResponse{Value: ""}, Error: errors.New("timeout")}
 			cnt--
 		}
 	}
@@ -88,12 +89,23 @@ func (cmd Command) Send(outChannel chan Command) string {
 	cmd.ReplyChannel = make(chan CommandReply, 10)
 	outChannel <- cmd
 	var msg string
+
+	var responses []string
+
 	for resp := range cmd.ReplyChannel {
 		if resp.Error != nil {
-			msg = fmt.Sprintf("%s%s\n", msg, resp.Error)
+			responses = append(responses, fmt.Sprintf("%s", resp.Error))
 		} else {
-			msg = fmt.Sprintf("%s%s\n", msg, resp.Reply)
+			responses = append(responses, fmt.Sprintf("%s", resp.Reply))
 		}
+
+		// This is where messages come back
+		// We might need to encode before they're written to the channel
+		var val []byte
+		val, _ = json.Marshal(resp.Reply)
+		msg = string(val) // @TODO This isn't printing
+		fmt.Println(msg)
+		//msg = strings.Join(responses, "\n")
 	}
 	return msg
 }

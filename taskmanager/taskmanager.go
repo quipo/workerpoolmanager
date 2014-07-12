@@ -15,6 +15,35 @@ import (
 
 const minStallDetectionFrequency int64 = 5000 // check at least every 5 seconds
 
+type CommandResponse interface {
+	MarshalJSON() ([]byte, error)
+	MarshalText() string
+}
+
+type KeyValueResponse struct {
+	Value map[string]string
+}
+
+func (k KeyValueResponse) MarshalJSON() ([]byte, error) {
+	return []byte("{\"foo\":\"bar\"}"), nil
+}
+
+func (k KeyValueResponse) MarshalText() string {
+	return "Foo"
+}
+
+type StringResponse struct {
+	Value string
+}
+
+func (r StringResponse) MarshalJSON() ([]byte, error) {
+	return []byte("Foo"), nil
+}
+
+func (r StringResponse) MarshalText() string {
+	return "String"
+}
+
 // TaskManager contains an instance of all its running worker processes,
 // and controls they keep running until asked to terminate.
 // Stalled workers are asked to terminate and restarted.
@@ -142,18 +171,18 @@ func (task *TaskManager) RunCommand(cmd Command) {
 	// process
 	switch cmd.Type {
 	case "status":
-		cmd.ReplyChannel <- CommandReply{Reply: mapToString(task.Status()), Error: nil}
+		cmd.ReplyChannel <- CommandReply{Reply: &KeyValueResponse{Value: task.Status()}, Error: nil}
 	case "set":
 		task.Set(cmd)
 	case "stop":
 		task.Stop()
-		cmd.ReplyChannel <- CommandReply{Reply: "Stopped " + task.Name + " workers", Error: nil}
+		cmd.ReplyChannel <- CommandReply{Reply: &StringResponse{Value: "Stopped " + task.Name + " workers"}, Error: nil}
 	case "listworkers":
-		cmd.ReplyChannel <- CommandReply{Reply: strings.Join(task.ListWorkers(), "\n"), Error: nil}
+		cmd.ReplyChannel <- CommandReply{Reply: &StringResponse{Value: strings.Join(task.ListWorkers(), "\n")}, Error: nil}
 	case "stopworkers":
 		pids := cmd.Value.([]int)
 		task.StopWorkers(pids)
-		cmd.ReplyChannel <- CommandReply{Reply: fmt.Sprintf("Stopped individual workers (%v)", pids), Error: nil}
+		cmd.ReplyChannel <- CommandReply{Reply: &StringResponse{Value: fmt.Sprintf("Stopped individual workers (%v)", pids)}, Error: nil}
 	case "stoppedworker":
 		task.logger.Println("TERMINATED WORKER", cmd.Value)
 		task.nStoppedWorkers++
@@ -243,7 +272,7 @@ func (task *TaskManager) Set(cmd Command) {
 		err = errors.New("Unknown task config update command: " + cmd.String())
 	}
 
-	cmd.ReplyChannel <- CommandReply{Reply: msg, Error: err}
+	cmd.ReplyChannel <- CommandReply{Reply: &StringResponse{Value: msg}, Error: err}
 }
 
 // utility method
