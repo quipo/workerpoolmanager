@@ -49,6 +49,11 @@ func NewRunner(taskMgrConf TaskManagerConf) (TaskManagerRunner, error) {
 	taskfiles := jqutils.Filter(jqutils.ListFiles(taskMgrConf.Path), func(v string) bool {
 		return strings.HasSuffix(v, taskMgrConf.FileSuffix)
 	})
+	if len(taskfiles) < 1 {
+		logger := log.New(os.Stdout, "[TaskManagerRunner] ", log.Ldate|log.Ltime)
+		logger.Println("NewRunner() - no tasks found at path", taskMgrConf.Path)
+		os.Exit(0)
+	}
 
 	for filename, taskname := range jqutils.KMap(taskfiles, func(v string) string {
 		return strings.TrimSuffix(v, taskMgrConf.FileSuffix)
