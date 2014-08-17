@@ -18,13 +18,13 @@ func (handler *SignalHandler) Run() {
 	logger := log.New(os.Stdout, "[SignalHandler] ", log.Ldate|log.Ltime)
 
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Kill, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGQUIT)
+	signal.Notify(c, os.Kill, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGQUIT, os.Interrupt)
 	go func() {
 		interr := <-c
 		logger.Println("Received Interrupt")
 		switch interr {
-		//case syscall.SIGINT:
-		//	logger.Println("Received SIGINT")
+		case syscall.SIGINT:
+			logger.Println("Received SIGINT")
 		case syscall.SIGTERM:
 			logger.Println("Received SIGTERM")
 		case syscall.SIGHUP:
@@ -33,6 +33,8 @@ func (handler *SignalHandler) Run() {
 			logger.Println("Received SIGQUIT")
 		case os.Kill:
 			logger.Println("Received kill")
+		case os.Interrupt:
+			logger.Println("Received interrupt")
 		}
 
 		cmd := Command{Type: "stop", ReplyChannel: make(chan CommandReply, 1)}
