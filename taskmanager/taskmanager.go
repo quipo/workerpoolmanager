@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -42,7 +43,7 @@ type TaskManager struct {
 // NewTaskManager creates a new Task Manager instance
 func NewTaskManager(name string, keepAliveConf KeepAliveConf, feedback chan<- Command) TaskManager {
 	keepAlives := JobqueueKeepAliveHandler{Topic: name, Host: keepAliveConf.Host, Port: keepAliveConf.InternalPort}
-	mgr := TaskManager{Name: name, keepAliveHandler: &keepAlives, StallTimeout: keepAliveConf.StallTimeout}
+	mgr := TaskManager{Name: name, keepAliveHandler: &keepAlives, StallTimeout: keepAliveConf.StallTimeout, GracePeriod: keepAliveConf.GracePeriod}
 	if mgr.StallTimeout == 0 {
 		mgr.StallTimeout = 60000 // 1min by default
 	}
@@ -84,6 +85,7 @@ func (task *TaskManager) Run(commands chan Command, cmd Command) {
 	// Any failure here warrants stopping the task
 	err := task.MaintainWorkerCardinality()
 	if err != nil {
+		fmt.Println(err)
 		task.Stop()
 		cmd.Fail(err.Error())
 	} else {
@@ -181,12 +183,18 @@ func (task *TaskManager) Stop() {
 // StopWorkers asks all workers in the pid list to stop (don't wait for them to terminate)
 func (task *TaskManager) StopWorkers(pids []int) {
 	if len(pids) > 0 {
+		var wg sync.WaitGroup
 		gracePeriod := time.Duration(task.GracePeriod) * time.Millisecond
 		for _, pid := range pids {
 			if worker, ok := task.workers[pid]; ok {
-				go worker.Stop(gracePeriod, task.commandChannel)
+				wg.Add(1)
+				go func(w Worker) {
+					defer wg.Done()
+					w.Stop(gracePeriod, task.commandChannel)
+				}(worker)
 			}
 		}
+		wg.Wait()
 	}
 }
 

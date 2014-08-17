@@ -37,7 +37,8 @@ func (worker *Worker) Stop(gracePeriod time.Duration, confirmChannel chan<- Comm
 		Name:         "pid",
 		Value:        worker.Pid,
 		TaskName:     worker.Taskname,
-		ReplyChannel: make(chan CommandReply, 1)}
+		ReplyChannel: make(chan CommandReply, 1),
+	}
 
 	//err := syscall.Kill(worker.Pid, syscall.SIGTERM)
 	proc, err := os.FindProcess(worker.Pid)

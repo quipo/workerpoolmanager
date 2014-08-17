@@ -19,6 +19,7 @@ type KeepAliveConf struct {
 	InternalPort int    `json:"internal_port,omitempty"`
 	Host         string `json:"host,omitempty"`
 	StallTimeout int64  `json:"stall_timeout,omitempty"`
+	GracePeriod  int64  `json:"grace_period,omitempty"`
 }
 
 // TaskManagerConf contains the configuration for the Task Manager
