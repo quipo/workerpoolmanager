@@ -92,12 +92,24 @@ func (taskRunner *TaskManagerRunner) Run() {
 	// init HTTP, signal and keep-alive handlers
 	taskRunner.taskCommands = make(map[string]chan Command)
 
-	httpHandler := HTTPHandler{CommandChannel: taskRunner.inputCommands, Host: "localhost", Port: taskRunner.Conf.Port}
-	signalHandler := SignalHandler{CommandChannel: taskRunner.inputCommands}
+	httpHandler := HTTPHandler{
+		CommandChannel: taskRunner.inputCommands,
+		Host:           "localhost",
+		Port:           taskRunner.Conf.Port,
+		Logger:         log.New(os.Stdout, "[HttpHandler] ", log.Ldate|log.Ltime),
+	}
+	signalHandler := SignalHandler{
+		CommandChannel: taskRunner.inputCommands,
+		Logger:         log.New(os.Stdout, "[SignalHandler] ", log.Ldate|log.Ltime),
+	}
 
 	// start a ZeroMQ PUB-SUB proxy (many-to-many device)
 	zmqConf := taskRunner.Conf.Keepalives
-	go jqutils.ZmqPubSubProxy(zmqConf.Host, zmqConf.InboundPort, zmqConf.InternalPort)
+	go jqutils.ZmqPubSubProxy(
+		zmqConf.Host,
+		zmqConf.InboundPort,
+		zmqConf.InternalPort,
+		log.New(os.Stdout, "[ZeromqProxy] ", log.Ldate|log.Ltime))
 
 	go signalHandler.Run()
 	go httpHandler.Run()
@@ -127,7 +139,7 @@ func (taskRunner *TaskManagerRunner) Run() {
 		}
 	}
 
-	log.Println("[TaskManagerRunner] terminating")
+	logger.Println("terminating")
 	os.Exit(0)
 }
 

@@ -20,14 +20,15 @@ const minStallDetectionFrequency int64 = 5000 // check at least every 5 seconds
 // and controls they keep running until asked to terminate.
 // Stalled workers are asked to terminate and restarted.
 type TaskManager struct {
-	Name         string   `json:"name,omitempty"`          // task name
-	Cmd          string   `json:"cmd,omitempty"`           // cli command
-	Args         []string `json:"args,omitempty"`          // cli args
-	Cardinality  int      `json:"cardinality,omitempty"`   // number of workers
-	StallTimeout int64    `json:"stall_timeout,omitempty"` // consider the worker dead if no keep-alives are received for this period (ms)
-	AutoStart    bool     `json:"autostart,omitempty"`     // whether to start the task automatically
-	GracePeriod  int64    `json:"grace_period,omitempty"`  // grace period (ms) before killing a worker after being asked to stop
-	Active       bool
+	Name          string   `json:"name,omitempty"`           // task name
+	Cmd           string   `json:"cmd,omitempty"`            // cli command
+	Args          []string `json:"args,omitempty"`           // cli args
+	Cardinality   int      `json:"cardinality,omitempty"`    // number of workers
+	StallTimeout  int64    `json:"stall_timeout,omitempty"`  // consider the worker dead if no keep-alives are received for this period (ms)
+	AutoStart     bool     `json:"autostart,omitempty"`      // whether to start the task automatically
+	GracePeriod   int64    `json:"grace_period,omitempty"`   // grace period (ms) before killing a worker after being asked to stop
+	CaptureOutput bool     `json:"capture_output,omitempty"` //whether to capture the output and send it to stdout
+	Active        bool
 	// private struct members
 	workers              map[int]Worker // metadata about worker processes
 	startedAt            time.Time      // when the task manager was started
@@ -42,8 +43,18 @@ type TaskManager struct {
 
 // NewTaskManager creates a new Task Manager instance
 func NewTaskManager(name string, keepAliveConf KeepAliveConf, feedback chan<- Command) TaskManager {
-	keepAlives := JobqueueKeepAliveHandler{Topic: name, Host: keepAliveConf.Host, Port: keepAliveConf.InternalPort}
-	mgr := TaskManager{Name: name, keepAliveHandler: &keepAlives, StallTimeout: keepAliveConf.StallTimeout, GracePeriod: keepAliveConf.GracePeriod}
+	keepAlives := JobqueueKeepAliveHandler{
+		Topic:  name,
+		Host:   keepAliveConf.Host,
+		Port:   keepAliveConf.InternalPort,
+		Logger: log.New(os.Stdout, "[KeepAliveHandler] ", log.Ldate|log.Ltime),
+	}
+	mgr := TaskManager{
+		Name:             name,
+		keepAliveHandler: &keepAlives,
+		StallTimeout:     keepAliveConf.StallTimeout,
+		GracePeriod:      keepAliveConf.GracePeriod,
+	}
 	if mgr.StallTimeout == 0 {
 		mgr.StallTimeout = 60000 // 1min by default
 	}
@@ -267,13 +278,23 @@ func mapToString(m map[string]string) string {
 func (task *TaskManager) StartWorker() error {
 	//task.logger.Println("StartWorker()", task.Cmd, task.Args)
 	cmd := exec.Command(task.Cmd, task.Args...)
+	if task.CaptureOutput {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stdout
+	}
 	err := cmd.Start()
 	if err != nil {
 		return err
 	}
 
 	task.logger.Printf("Started new worker (pid %d) %s %+v\n", cmd.Process.Pid, task.Cmd, task.Args)
-	worker := Worker{Pid: cmd.Process.Pid, Taskname: task.Name, StartedAt: time.Now(), LastAliveAt: time.Now()}
+	worker := Worker{
+		Pid:         cmd.Process.Pid,
+		Taskname:    task.Name,
+		StartedAt:   time.Now(),
+		LastAliveAt: time.Now(),
+		Logger:      task.logger,
+	}
 	if len(task.workers) < 1 {
 		task.workers = make(map[int]Worker)
 	}
@@ -377,5 +398,8 @@ func (task *TaskManager) CopyFrom(autotask TaskManager) {
 	}
 	if autotask.Active {
 		task.Active = true
+	}
+	if autotask.CaptureOutput {
+		task.CaptureOutput = true
 	}
 }

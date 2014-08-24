@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	zmq "github.com/pebbe/zmq4"
@@ -18,9 +19,10 @@ type KeepAlive struct {
 
 // JobqueueKeepAliveHandler contains the configuration for the Keep-Alive handler
 type JobqueueKeepAliveHandler struct {
-	Host  string
-	Port  int
-	Topic string
+	Host   string
+	Port   int
+	Topic  string
+	Logger *log.Logger
 }
 
 // Implement String() interface
@@ -34,11 +36,14 @@ func (x KeepAlive) String() string {
 
 // Run method: Listen to keep-alive messages sent via ZeroMQ and forward them to a channel
 func (handler *JobqueueKeepAliveHandler) Run(keepalives chan<- KeepAlive) {
+	if handler.Logger == nil {
+		handler.Logger = log.New(os.Stdout, "[KeepAliveHandler] ", log.Ldate|log.Ltime)
+	}
 	receiver, _ := zmq.NewSocket(zmq.SUB)
 	defer receiver.Close()
 
 	addr := fmt.Sprintf("tcp://%s:%d", handler.Host, handler.Port)
-	log.Println("[KeepAliveHandler] ZMQ SUB on", addr, handler.Topic)
+	handler.Logger.Println("ZMQ SUB on", addr, handler.Topic)
 	receiver.Connect(addr)
 	receiver.SetSubscribe(handler.Topic)
 
@@ -48,11 +53,11 @@ func (handler *JobqueueKeepAliveHandler) Run(keepalives chan<- KeepAlive) {
 	// shut down cleanly when the keep-alive channel is closed
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("[KeepAliveHandler] Recovering from panic (likely: trying to send msg on closed keep-alive channel)", r)
+			handler.Logger.Println("Recovering from panic (likely: trying to send msg on closed keep-alive channel)", r)
 		}
 	}()
 
-	fmt.Println("[KeepAliveHandler] waiting for message for topic", handler.Topic)
+	handler.Logger.Println("waiting for message for topic", handler.Topic)
 	for {
 		sockets, _ := poller.Poll(5 * time.Second)
 		for _, socket := range sockets {
@@ -62,7 +67,7 @@ func (handler *JobqueueKeepAliveHandler) Run(keepalives chan<- KeepAlive) {
 				var keepalive KeepAlive
 				err := json.Unmarshal([]byte(msg[1]), &keepalive)
 				if err != nil {
-					log.Println("[KeepAliveHandler] Error decoding json string:", err)
+					handler.Logger.Println("Error decoding json string:", err)
 					continue
 				}
 				//log.Println("[KeepAliveHandler] sending to channel ", keepalive)

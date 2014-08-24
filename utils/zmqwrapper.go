@@ -9,7 +9,7 @@ import (
 )
 
 // ZmqPubSubProxy Implements a many-to-many device on a zmq PUB-SUB connection
-func ZmqPubSubProxy(host string, portIn int, portOut int) {
+func ZmqPubSubProxy(host string, portIn int, portOut int, logger *log.Logger) {
 	xsub, _ := zmq.NewSocket(zmq.SUB)
 	xpub, _ := zmq.NewSocket(zmq.PUB)
 
@@ -19,11 +19,11 @@ func ZmqPubSubProxy(host string, portIn int, portOut int) {
 	addrIn := fmt.Sprintf("tcp://*:%d", portIn)
 	addrOut := fmt.Sprintf("tcp://*:%d", portOut)
 
-	log.Println("ZMQ XSUB on", addrIn)
+	logger.Println("ZMQ XSUB on", addrIn)
 	xsub.Bind(addrIn)
 	xsub.SetSubscribe("")
 
-	log.Println("ZMQ XPUB on", addrOut)
+	logger.Println("ZMQ XPUB on", addrOut)
 	xpub.Bind(addrOut)
 
 	poller := zmq.NewPoller()

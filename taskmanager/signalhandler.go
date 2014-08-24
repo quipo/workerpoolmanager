@@ -11,41 +11,44 @@ import (
 // SignalHandler wrap the command channel
 type SignalHandler struct {
 	CommandChannel chan Command
+	Logger         *log.Logger
 }
 
 // Run the Signal handler, to intercept interrupts and shut down processes cleanly
 func (handler *SignalHandler) Run() {
-	logger := log.New(os.Stdout, "[SignalHandler] ", log.Ldate|log.Ltime)
+	if handler.Logger == nil {
+		handler.Logger = log.New(os.Stdout, "[SignalHandler] ", log.Ldate|log.Ltime)
+	}
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Kill, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGQUIT, os.Interrupt)
 	go func() {
 		interr := <-c
-		logger.Println("Received Interrupt")
+		handler.Logger.Println("Received Interrupt")
 		switch interr {
 		case syscall.SIGINT:
-			logger.Println("Received SIGINT")
+			handler.Logger.Println("Received SIGINT")
 		case syscall.SIGTERM:
-			logger.Println("Received SIGTERM")
+			handler.Logger.Println("Received SIGTERM")
 		case syscall.SIGHUP:
-			logger.Println("Received SIGHUP")
+			handler.Logger.Println("Received SIGHUP")
 		case syscall.SIGQUIT:
-			logger.Println("Received SIGQUIT")
+			handler.Logger.Println("Received SIGQUIT")
 		case os.Kill:
-			logger.Println("Received kill")
+			handler.Logger.Println("Received kill")
 		case os.Interrupt:
-			logger.Println("Received interrupt")
+			handler.Logger.Println("Received interrupt")
 		}
 
 		cmd := Command{Type: "stop", ReplyChannel: make(chan CommandReply, 1)}
-		logger.Println("Sending stop to all task managers:")
-		logger.Println(cmd.Send(handler.CommandChannel))
+		handler.Logger.Println("Sending stop to all task managers:")
+		handler.Logger.Println(cmd.Send(handler.CommandChannel))
 
 		os.Exit(1)
 	}()
 
 	for {
-		logger.Println("Waiting for interrupt")
+		handler.Logger.Println("Waiting for interrupt")
 		time.Sleep(1 * time.Minute)
 	}
 }
