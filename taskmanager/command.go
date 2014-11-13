@@ -17,11 +17,12 @@ type CommandReply struct {
 // Command sent on the command channel. Might be specific to a task or generic.
 // The type can be one of 'status', 'set', 'stop', 'listworkers', 'stopworkers' or 'stoppedworkers'
 type Command struct {
-	Type         string      `json:"type"`
-	Name         string      `json:"name,omitempty"`
-	Value        interface{} `json:"value,omitempty"`
-	TaskName     string      `json:"taskname,omitempty"`
-	ReplyChannel chan CommandReply
+	Type           string      `json:"type"`
+	Name           string      `json:"name,omitempty"`
+	Value          interface{} `json:"value,omitempty"`
+	TaskName       string      `json:"taskname,omitempty"`
+	ResponseFormat string      `json:"format,omitempty"`
+	ReplyChannel   chan CommandReply
 }
 
 // Implement String() interface
@@ -101,10 +102,13 @@ func (cmd Command) Send(outChannel chan Command) string {
 		// This is where messages come back
 		// We might need to encode before they're written to the channel
 		var val []byte
-		val, _ = json.Marshal(resp.Reply)
-		msg = string(val) // @TODO This isn't printing
-		fmt.Println(msg)
-		//msg = strings.Join(responses, "\n")
+
+		if cmd.ResponseFormat == "json" {
+			val, _ = json.Marshal(resp.Reply)
+			msg = string(val)
+		} else {
+			msg = resp.Reply.MarshalText()
+		}
 	}
 	return msg
 }

@@ -1,7 +1,7 @@
 package taskmanager
 
 import (
-	//"encoding/json"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -26,11 +26,18 @@ type KeyValueResponse struct {
 }
 
 func (k KeyValueResponse) MarshalJSON() ([]byte, error) {
-	return []byte("{\"foo\":\"bar\"}"), nil
+	v, err := json.Marshal(k.Value)
+
+	if err != nil {
+		fmt.Println("Error encoding JSON response")
+		return []byte("{}"), nil
+	}
+
+	return v, nil
 }
 
 func (k KeyValueResponse) MarshalText() string {
-	return "Foo"
+	return mapToString(k.Value)
 }
 
 type StringResponse struct {
@@ -38,11 +45,12 @@ type StringResponse struct {
 }
 
 func (r StringResponse) MarshalJSON() ([]byte, error) {
-	return []byte("Foo"), nil
+	v, err := json.Marshal(r.Value)
+	return v, err
 }
 
 func (r StringResponse) MarshalText() string {
-	return "String"
+	return r.Value
 }
 
 // TaskManager contains an instance of all its running worker processes,
