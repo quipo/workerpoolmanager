@@ -172,7 +172,6 @@ Note the signal handler (to catch SIGTERM signals and terminate gracefully) and 
 
 ## TODO
 
-* Capture stdout from processes
 * Better logging (implement INFO/WARNING/ERROR levels)
 * Use [concurrent map](https://github.com/PokemonUniverse/nonamelib/blob/master/container/concurrentmap/concurrentmap.go) for workers?
 * Test suite
@@ -181,6 +180,8 @@ Note the signal handler (to catch SIGTERM signals and terminate gracefully) and 
 * Alternate machine-readable (JSON) output for responses from the HTTP interface (via Accept headers)
 * Break out dead workers number into stalls, successful exits and bad exits
 * Add metrics - probably to [Riemann](http://riemann.io/)
+* Ability to start / stop all the autostart tasks
+
 
 ## Design
 

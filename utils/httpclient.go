@@ -24,11 +24,18 @@ func (client *JobqueueHTTPClient) setDefaultURL() {
 
 // Open an HTTP connection to control the task manager runner
 func (client *JobqueueHTTPClient) Open(url string) (string, error) {
+	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+		url = "http://" + url
+	}
 	re1, err := regexp.Compile(`([hftps]+)?://([\w\.]+)?(:\d+)?(/[^\?]+)?(?:\?(.*))?`)
-	result := re1.FindAllStringSubmatch(url, -1)[0]
 	if nil != err {
 		return "", err
 	}
+	res := re1.FindAllStringSubmatch(url, -1)
+	if nil == res {
+		return "", fmt.Errorf("Cannot parse url %s", url)
+	}
+	result := res[0]
 	client.setDefaultURL()
 
 	if "" != result[1] {

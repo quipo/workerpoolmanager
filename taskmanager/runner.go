@@ -19,6 +19,7 @@ type KeepAliveConf struct {
 	InternalPort int    `json:"internal_port,omitempty"`
 	Host         string `json:"host,omitempty"`
 	StallTimeout int64  `json:"stall_timeout,omitempty"`
+	GracePeriod  int64  `json:"grace_period,omitempty"`
 }
 
 // TaskManagerConf contains the configuration for the Task Manager
@@ -49,6 +50,11 @@ func NewRunner(taskMgrConf TaskManagerConf) (TaskManagerRunner, error) {
 	taskfiles := jqutils.Filter(jqutils.ListFiles(taskMgrConf.Path), func(v string) bool {
 		return strings.HasSuffix(v, taskMgrConf.FileSuffix)
 	})
+	if len(taskfiles) < 1 {
+		logger := log.New(os.Stdout, "[TaskManagerRunner] ", log.Ldate|log.Ltime)
+		logger.Println("NewRunner() - no tasks found at path", taskMgrConf.Path)
+		os.Exit(0)
+	}
 
 	for filename, taskname := range jqutils.KMap(taskfiles, func(v string) string {
 		return strings.TrimSuffix(v, taskMgrConf.FileSuffix)
@@ -86,12 +92,24 @@ func (taskRunner *TaskManagerRunner) Run() {
 	// init HTTP, signal and keep-alive handlers
 	taskRunner.taskCommands = make(map[string]chan Command)
 
-	httpHandler := HTTPHandler{CommandChannel: taskRunner.inputCommands, Host: "localhost", Port: taskRunner.Conf.Port}
-	signalHandler := SignalHandler{CommandChannel: taskRunner.inputCommands}
+	httpHandler := HTTPHandler{
+		CommandChannel: taskRunner.inputCommands,
+		Host:           "localhost",
+		Port:           taskRunner.Conf.Port,
+		Logger:         log.New(os.Stdout, "[HttpHandler] ", log.Ldate|log.Ltime),
+	}
+	signalHandler := SignalHandler{
+		CommandChannel: taskRunner.inputCommands,
+		Logger:         log.New(os.Stdout, "[SignalHandler] ", log.Ldate|log.Ltime),
+	}
 
 	// start a ZeroMQ PUB-SUB proxy (many-to-many device)
 	zmqConf := taskRunner.Conf.Keepalives
-	go jqutils.ZmqPubSubProxy(zmqConf.Host, zmqConf.InboundPort, zmqConf.InternalPort)
+	go jqutils.ZmqPubSubProxy(
+		zmqConf.Host,
+		zmqConf.InboundPort,
+		zmqConf.InternalPort,
+		log.New(os.Stdout, "[ZeromqProxy] ", log.Ldate|log.Ltime))
 
 	go signalHandler.Run()
 	go httpHandler.Run()
@@ -121,7 +139,7 @@ func (taskRunner *TaskManagerRunner) Run() {
 		}
 	}
 
-	log.Println("[TaskManagerRunner] terminating")
+	logger.Println("terminating")
 	os.Exit(0)
 }
 

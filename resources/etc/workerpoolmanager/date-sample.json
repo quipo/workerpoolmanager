@@ -13,7 +13,8 @@
 		"date": {
 			"cardinality": 1,
 			"cmd": "date",
-			"args": []
+			"args": [],
+			"capture_output": true
 		}
 	}
 }

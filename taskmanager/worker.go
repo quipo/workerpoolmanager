@@ -14,6 +14,7 @@ type Worker struct {
 	Taskname    string
 	StartedAt   time.Time
 	LastAliveAt time.Time
+	Logger      *log.Logger
 }
 
 // Implement String() interface
@@ -37,12 +38,13 @@ func (worker *Worker) Stop(gracePeriod time.Duration, confirmChannel chan<- Comm
 		Name:         "pid",
 		Value:        worker.Pid,
 		TaskName:     worker.Taskname,
-		ReplyChannel: make(chan CommandReply, 1)}
+		ReplyChannel: make(chan CommandReply, 1),
+	}
 
 	//err := syscall.Kill(worker.Pid, syscall.SIGTERM)
 	proc, err := os.FindProcess(worker.Pid)
 	if err != nil {
-		log.Printf("worker.Stop(): Cannot find worker process %d: %s\n", worker.Pid, err)
+		worker.Logger.Printf("worker.Stop(): Cannot find worker process %d: %s\n", worker.Pid, err)
 		confirmChannel <- confirmCommand
 		return
 	}
@@ -50,7 +52,7 @@ func (worker *Worker) Stop(gracePeriod time.Duration, confirmChannel chan<- Comm
 	// attempt stopping the worker with a SIGTERM first
 	err = proc.Signal(syscall.SIGTERM)
 	if err != nil {
-		log.Printf("worker.Stop(): Error sending SIGTERM to worker process %d: %s\n", worker.Pid, err)
+		worker.Logger.Printf("worker.Stop(): Error sending SIGTERM to worker process %d: %s\n", worker.Pid, err)
 	}
 
 	// wait until the process returns, or timeout + kill after a grace period
@@ -63,15 +65,15 @@ func (worker *Worker) Stop(gracePeriod time.Duration, confirmChannel chan<- Comm
 	select {
 	case <-time.After(gracePeriod):
 		if err := proc.Kill(); err != nil {
-			log.Println("worker.Stop(): Failed to kill process", worker.Pid, err)
+			worker.Logger.Println("worker.Stop(): Failed to kill process", worker.Pid, err)
 		}
 		<-done // allow goroutine to exit
-		log.Printf("Worker process still around after %s, killed pid %d\n", gracePeriod, worker.Pid)
+		worker.Logger.Printf("Worker process still around after %s, killed pid %d\n", gracePeriod, worker.Pid)
 	case err := <-done:
 		if err != nil {
-			log.Printf("Worker process %d terminated with error = %s\n", worker.Pid, err)
+			worker.Logger.Printf("Worker process %d terminated with error: %s\n", worker.Pid, err)
 		} else {
-			log.Printf("Worker process %d terminated gracefully\n", worker.Pid)
+			worker.Logger.Printf("Worker process %d terminated gracefully\n", worker.Pid)
 		}
 	}
 
@@ -101,6 +103,7 @@ func (worker *Worker) CleanupProcessIfDead(confirmChannel chan<- Command) {
 			Name:         "pid",
 			Value:        worker.Pid,
 			TaskName:     worker.Taskname,
-			ReplyChannel: make(chan CommandReply, 1)}
+			ReplyChannel: make(chan CommandReply, 1),
+		}
 	}
 }

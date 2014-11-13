@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/codegangsta/martini"
 )
@@ -13,10 +14,14 @@ type HTTPHandler struct {
 	Host           string
 	Port           int
 	CommandChannel chan Command
+	Logger         *log.Logger
 }
 
 // Run the HTTP handler, which exposes an HTTP interface to control tasks
 func (handler *HTTPHandler) Run() {
+	if handler.Logger == nil {
+		handler.Logger = log.New(os.Stdout, "[HTTPHandler] ", log.Ldate|log.Ltime)
+	}
 	m := martini.Classic()
 	http.ListenAndServe(handler.Host+":"+string(handler.Port), m)
 
@@ -44,9 +49,9 @@ func (handler *HTTPHandler) Run() {
 	//m.Run()
 
 	address := fmt.Sprintf(":%d", handler.Port)
-	log.Println("HTTP handler listening on", address)
+	handler.Logger.Println("HTTP handler listening on", address)
 
-	log.Fatalln(http.ListenAndServe(address, m))
+	handler.Logger.Fatalln(http.ListenAndServe(address, m))
 }
 
 //TODO: return appropriate HTTP status code in case of error

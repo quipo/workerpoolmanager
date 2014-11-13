@@ -11,10 +11,12 @@
 	"filesuffix": "Task.php",
 	"autotasks": {
 		"Example": {
-			"cardinality": 1
+			"cardinality": 1,
+			"capture_output": true
 		},
 		"Failing": {
-			"cardinality": 1
+			"cardinality": 1,
+			"capture_output": true
 		}
 	}
 }

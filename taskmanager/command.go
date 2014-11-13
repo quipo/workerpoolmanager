@@ -86,7 +86,6 @@ func (cmd *Command) Forward(outChannel chan Command) bool {
 
 // Send the Command and get the response(s) as string
 func (cmd Command) Send(outChannel chan Command) string {
-	cmd.ReplyChannel = make(chan CommandReply, 10)
 	outChannel <- cmd
 	var msg string
 
