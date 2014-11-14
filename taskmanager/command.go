@@ -90,24 +90,26 @@ func (cmd Command) Send(outChannel chan Command) string {
 	outChannel <- cmd
 	var msg string
 
-	var responses []string
+	var responses []interface{}
 
 	for resp := range cmd.ReplyChannel {
 		if resp.Error != nil {
-			responses = append(responses, fmt.Sprintf("%s", resp.Error))
+			responses = append(responses, resp.Error)
 		} else {
-			responses = append(responses, fmt.Sprintf("%s", resp.Reply))
+			responses = append(responses, resp.Reply)
 		}
+	}
 
-		// This is where messages come back
-		// We might need to encode before they're written to the channel
-		var val []byte
-
-		if cmd.ResponseFormat == "json" {
-			val, _ = json.Marshal(resp.Reply)
-			msg = string(val)
-		} else {
-			msg = resp.Reply.MarshalText()
+	if cmd.ResponseFormat == "json" {
+		val, err := json.Marshal(responses)
+		if err != nil {
+			fmt.Println("Error encoding JSON")
+			return
+		}
+		msg = string(val)
+	} else {
+		for _, v := range responses {
+			msg = msg + v.(CommandResponse).MarshalText() + "\n"
 		}
 	}
 	return msg

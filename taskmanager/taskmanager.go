@@ -29,8 +29,7 @@ func (k KeyValueResponse) MarshalJSON() ([]byte, error) {
 	v, err := json.Marshal(k.Value)
 
 	if err != nil {
-		fmt.Println("Error encoding JSON response")
-		return []byte("{}"), nil
+		return nil, err
 	}
 
 	return v, nil
