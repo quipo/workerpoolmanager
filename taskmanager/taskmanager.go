@@ -18,7 +18,7 @@ const minStallDetectionFrequency int64 = 5000 // check at least every 5 seconds
 
 type CommandResponse interface {
 	MarshalJSON() ([]byte, error)
-	MarshalText() string
+	String() string
 }
 
 type KeyValueResponse struct {
@@ -35,7 +35,7 @@ func (k KeyValueResponse) MarshalJSON() ([]byte, error) {
 	return v, nil
 }
 
-func (k KeyValueResponse) MarshalText() string {
+func (k KeyValueResponse) String() string {
 	return mapToString(k.Value)
 }
 
@@ -48,7 +48,7 @@ func (r StringResponse) MarshalJSON() ([]byte, error) {
 	return v, err
 }
 
-func (r StringResponse) MarshalText() string {
+func (r StringResponse) String() string {
 	return r.Value
 }
 

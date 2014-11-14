@@ -104,12 +104,15 @@ func (cmd Command) Send(outChannel chan Command) string {
 		val, err := json.Marshal(responses)
 		if err != nil {
 			fmt.Println("Error encoding JSON")
-			return
+			return ""
 		}
 		msg = string(val)
 	} else {
 		for _, v := range responses {
-			msg = msg + v.(CommandResponse).MarshalText() + "\n"
+			switch val := v.(type) {
+			case string, CommandResponse:
+				msg = fmt.Sprintf("%s%s\n", msg, val)
+			}
 		}
 	}
 	return msg
