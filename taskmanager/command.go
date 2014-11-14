@@ -1,6 +1,7 @@
 package taskmanager
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -9,18 +10,19 @@ import (
 // CommandReply is the type of a reply on the ReplyChannel for a Command.
 // It contains the successful response (string) or an error on command failure
 type CommandReply struct {
-	Reply string
+	Reply CommandResponse
 	Error error
 }
 
 // Command sent on the command channel. Might be specific to a task or generic.
 // The type can be one of 'status', 'set', 'stop', 'listworkers', 'stopworkers' or 'stoppedworkers'
 type Command struct {
-	Type         string      `json:"type"`
-	Name         string      `json:"name,omitempty"`
-	Value        interface{} `json:"value,omitempty"`
-	TaskName     string      `json:"taskname,omitempty"`
-	ReplyChannel chan CommandReply
+	Type           string      `json:"type"`
+	Name           string      `json:"name,omitempty"`
+	Value          interface{} `json:"value,omitempty"`
+	TaskName       string      `json:"taskname,omitempty"`
+	ResponseFormat string      `json:"format,omitempty"`
+	ReplyChannel   chan CommandReply
 }
 
 // Implement String() interface
@@ -30,14 +32,14 @@ func (cmd Command) String() string {
 
 // Fail sends a Reply with a failure message
 func (cmd *Command) Fail(msg string) bool {
-	cmd.ReplyChannel <- CommandReply{Reply: "", Error: errors.New(msg)}
+	cmd.ReplyChannel <- CommandReply{Reply: &StringResponse{Value: ""}, Error: errors.New(msg)}
 	close(cmd.ReplyChannel)
 	return false
 }
 
 // Success sends a Reply with a success message
 func (cmd *Command) Success(msg string) bool {
-	cmd.ReplyChannel <- CommandReply{Reply: msg, Error: nil}
+	cmd.ReplyChannel <- CommandReply{Reply: &StringResponse{Value: msg}, Error: nil}
 	close(cmd.ReplyChannel)
 	return true
 }
@@ -56,7 +58,7 @@ func (cmd *Command) Broadcast(outChannels map[string]chan Command) bool {
 		out <- *cmd
 	}
 	if cnt == 0 {
-		replies <- CommandReply{Reply: "", Error: errors.New("no active tasks")}
+		replies <- CommandReply{Reply: &StringResponse{Value: ""}, Error: errors.New("no active tasks")}
 	}
 
 	// wait for all channels to reply
@@ -66,7 +68,7 @@ func (cmd *Command) Broadcast(outChannels map[string]chan Command) bool {
 			replies <- resp
 			cnt--
 		case <-time.After(10 * time.Second):
-			replies <- CommandReply{Reply: "", Error: errors.New("timeout")}
+			replies <- CommandReply{Reply: &StringResponse{Value: ""}, Error: errors.New("timeout")}
 			cnt--
 		}
 	}
@@ -87,11 +89,30 @@ func (cmd *Command) Forward(outChannel chan Command) bool {
 func (cmd Command) Send(outChannel chan Command) string {
 	outChannel <- cmd
 	var msg string
+
+	var responses []interface{}
+
 	for resp := range cmd.ReplyChannel {
 		if resp.Error != nil {
-			msg = fmt.Sprintf("%s%s\n", msg, resp.Error)
+			responses = append(responses, resp.Error)
 		} else {
-			msg = fmt.Sprintf("%s%s\n", msg, resp.Reply)
+			responses = append(responses, resp.Reply)
+		}
+	}
+
+	if cmd.ResponseFormat == "json" {
+		val, err := json.Marshal(responses)
+		if err != nil {
+			fmt.Println("Error encoding JSON")
+			return ""
+		}
+		msg = string(val)
+	} else {
+		for _, v := range responses {
+			switch val := v.(type) {
+			case string, CommandResponse:
+				msg = fmt.Sprintf("%s%s\n", msg, val)
+			}
 		}
 	}
 	return msg

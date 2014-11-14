@@ -166,7 +166,7 @@ func (taskRunner *TaskManagerRunner) processCommand(cmd Command) bool {
 	switch cmd.Type {
 	case "list":
 		for _, taskname := range taskRunner.ListTasks() {
-			cmd.ReplyChannel <- CommandReply{Reply: taskname, Error: nil}
+			cmd.ReplyChannel <- CommandReply{Reply: &StringResponse{Value: taskname}, Error: nil}
 		}
 		close(cmd.ReplyChannel)
 		return true
