@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -12,6 +13,7 @@ import (
 type SignalHandler struct {
 	CommandChannel chan Command
 	Logger         *log.Logger
+	ForceTimeout   int64
 }
 
 // Run the Signal handler, to intercept interrupts and shut down processes cleanly
@@ -40,9 +42,17 @@ func (handler *SignalHandler) Run() {
 			handler.Logger.Println("Received interrupt")
 		}
 
-		cmd := Command{Type: "stop", ReplyChannel: make(chan CommandReply, 1)}
+		cmd := Command{Type: "stop", ReplyChannel: make(chan CommandReply, 1), Timeout: handler.ForceTimeout}
 		handler.Logger.Println("Sending stop to all task managers:")
-		handler.Logger.Println(cmd.Send(handler.CommandChannel))
+		msg := cmd.Send(handler.CommandChannel)
+		handler.Logger.Println(msg)
+
+		// if there was a timeout trying to gracefully stop workers, kill them before exiting the manager
+		if strings.Contains(msg, "timeout") {
+			cmd2 := Command{Type: "kill", ReplyChannel: make(chan CommandReply, 1)}
+			handler.Logger.Println("Killing all task managers:")
+			handler.Logger.Println(cmd2.Send(handler.CommandChannel))
+		}
 
 		os.Exit(1)
 	}()

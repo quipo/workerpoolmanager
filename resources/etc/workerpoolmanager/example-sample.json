@@ -7,6 +7,7 @@
 		"stall_timeout": 10000,
 		"grace_period": 1000
 	},
+	"force_timeout": 15000,
 	"path": "/path/to/example/tasks/",
 	"filesuffix": "Task.php",
 	"autotasks": {

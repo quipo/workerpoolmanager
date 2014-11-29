@@ -20,6 +20,7 @@ type Command struct {
 	Name         string      `json:"name,omitempty"`
 	Value        interface{} `json:"value,omitempty"`
 	TaskName     string      `json:"taskname,omitempty"`
+	Timeout      int64       `json:"timeout"`
 	ReplyChannel chan CommandReply
 }
 
@@ -59,13 +60,19 @@ func (cmd *Command) Broadcast(outChannels map[string]chan Command) bool {
 		replies <- CommandReply{Reply: "", Error: errors.New("no active tasks")}
 	}
 
+	// get custom timeout from command
+	timeout := time.Duration(10000) // 10s by default
+	if cmd.Timeout > 0 {
+		timeout = time.Duration(cmd.Timeout)
+	}
+
 	// wait for all channels to reply
 	for cnt > 0 {
 		select {
 		case resp := <-cmd.ReplyChannel:
 			replies <- resp
 			cnt--
-		case <-time.After(10 * time.Second):
+		case <-time.After(timeout * time.Millisecond):
 			replies <- CommandReply{Reply: "", Error: errors.New("timeout")}
 			cnt--
 		}

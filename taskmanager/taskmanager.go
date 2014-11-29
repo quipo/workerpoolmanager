@@ -103,6 +103,13 @@ func (task *TaskManager) Run(commands chan Command, cmd Command) {
 		cmd.Success("Started task manager")
 	}
 
+	defer func() {
+		if r := recover(); r != nil {
+			task.logger.Println("Recovered in Run() after panic:", r)
+			task.Active = false
+		}
+	}()
+
 	// loop until asked to terminate
 	for task.Active {
 		select {
@@ -161,6 +168,9 @@ func (task *TaskManager) RunCommand(cmd Command) {
 	case "stop":
 		task.Stop()
 		cmd.ReplyChannel <- CommandReply{Reply: "Stopped " + task.Name + " workers", Error: nil}
+	case "kill":
+		task.Kill()
+		cmd.ReplyChannel <- CommandReply{Reply: "Killed " + task.Name + " workers", Error: nil}
 	case "listworkers":
 		cmd.ReplyChannel <- CommandReply{Reply: strings.Join(task.ListWorkers(), "\n"), Error: nil}
 	case "stopworkers":
@@ -196,6 +206,40 @@ func (task *TaskManager) StopWorkers(pids []int) {
 	if len(pids) > 0 {
 		var wg sync.WaitGroup
 		gracePeriod := time.Duration(task.GracePeriod) * time.Millisecond
+		for _, pid := range pids {
+			if worker, ok := task.workers[pid]; ok {
+				wg.Add(1)
+				go func(w Worker) {
+					defer wg.Done()
+					w.Stop(gracePeriod, task.commandChannel)
+				}(worker)
+			}
+		}
+		wg.Wait()
+	}
+}
+
+// Kill forcefully kills all of this task's workers
+func (task *TaskManager) Kill() {
+	//task.logger.Println("Stop()")
+	task.Active = false
+	task.stallDetectionTicker.Stop()
+	//task.zombieDetectionTicker.Stop()
+	task.startedAt = time.Unix(0, 0)
+
+	pids := make([]int, 0)
+	for pid, _ := range task.workers {
+		pids = append(pids, pid)
+	}
+	task.KillWorkers(pids)
+	task.feedbackChannel <- Command{Type: "stopped", TaskName: task.Name, ReplyChannel: make(chan CommandReply, 1)}
+}
+
+// KillWorkers forcibly kills all the workers in the pid list to stop
+func (task *TaskManager) KillWorkers(pids []int) {
+	if len(pids) > 0 {
+		var wg sync.WaitGroup
+		gracePeriod := time.Duration(1) * time.Millisecond
 		for _, pid := range pids {
 			if worker, ok := task.workers[pid]; ok {
 				wg.Add(1)
