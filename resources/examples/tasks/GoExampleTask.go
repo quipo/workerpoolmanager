@@ -1,8 +1,8 @@
 package main
 
 import (
+	"fmt"
 	"log"
-	"log/syslog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,15 +11,18 @@ import (
 	jqutil "github.com/quipo/workerpoolmanager/utils"
 )
 
-func handleSigterm(done chan<- int, logger *syslog.Writer) {
+func handleSigterm(done chan<- int, logger *log.Logger) {
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGTERM)
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
 		sig := <-c
-		logger.Info("Received Interrupt")
 		switch sig {
 		case syscall.SIGTERM:
-			logger.Info("Received SIGTERM")
+			logger.Println("Received SIGTERM")
+		case syscall.SIGINT:
+			logger.Println("Received SIGINT")
+		default:
+			logger.Println("Received Interrupt")
 		}
 		done <- 1
 	}()
@@ -28,13 +31,10 @@ func handleSigterm(done chan<- int, logger *syslog.Writer) {
 var logger *log.Logger
 
 func main() {
-	logger, err := syslog.New(syslog.LOG_INFO, "[GoTask] ")
-	if err != nil {
-		log.Fatal("Cannot init Syslog logger:", err)
-	}
-	defer logger.Close()
+	mypid := os.Getpid()
+	logger := log.New(os.Stdout, fmt.Sprintf("[GoExampleTask][%d] ", mypid), log.Ldate|log.Ltime)
 
-	taskname := "Go"
+	taskname := "GoExample"
 	keepalive := jqutil.NewKeepAliveManager(taskname, "tcp://localhost:5591")
 
 	done := make(chan int)
@@ -46,12 +46,13 @@ func main() {
 		// do something, and send keep-alives regularly to communicate the health of this worker
 		select {
 		case <-time.After(2 * time.Second):
-			logger.Info("Sending keep-alive")
-			logger.Err("Sending keep-alive")
+			logger.Println("Sending keep-alive")
 			keepalive.SetAlive()
 		case <-done:
-			logger.Err("Asked to terminate")
+			logger.Println("Asked to terminate")
 			terminate = true
 		}
 	}
+
+	os.Exit(0)
 }

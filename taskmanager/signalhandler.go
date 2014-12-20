@@ -49,7 +49,7 @@ func (handler *SignalHandler) Run() {
 
 		// if there was a timeout trying to gracefully stop workers, kill them before exiting the manager
 		if strings.Contains(msg, "timeout") {
-			cmd2 := Command{Type: "kill", ReplyChannel: make(chan CommandReply, 1)}
+			cmd2 := Command{Type: "stop", ReplyChannel: make(chan CommandReply, 1)}
 			handler.Logger.Println("Killing all task managers:")
 			handler.Logger.Println(cmd2.Send(handler.CommandChannel))
 		}

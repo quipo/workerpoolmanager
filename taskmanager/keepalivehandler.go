@@ -56,6 +56,8 @@ func (handler *JobqueueKeepAliveHandler) Run(keepalives chan<- KeepAlive) {
 			handler.Logger.Println("Recovering from panic (likely: trying to send msg on closed keep-alive channel)", r)
 		}
 	}()
+	// at the end, close the channel to indicate that's all the work we have.
+	defer close(keepalives)
 
 	handler.Logger.Println("waiting for message for topic", handler.Topic)
 	for {
@@ -75,5 +77,4 @@ func (handler *JobqueueKeepAliveHandler) Run(keepalives chan<- KeepAlive) {
 			}
 		}
 	}
-	close(keepalives) // close the channel to indicate that's all the work we have.
 }
