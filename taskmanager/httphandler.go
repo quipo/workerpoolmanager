@@ -88,6 +88,11 @@ func (handler *HTTPHandler) taskStatus(params martini.Params) string {
 
 // Change the cardinality of workers for a specific task
 func (handler *HTTPHandler) taskSetOption(params martini.Params) string {
-	cmd := Command{TaskName: params["id"], Type: "set", Name: params["name"], Value: params["value"], ReplyChannel: make(chan CommandReply, 1)}
+	cmd := Command{
+		TaskName:     params["id"],
+		Type:         "set",
+		Params:       map[string]interface{}{params["name"]: params["value"]},
+		ReplyChannel: make(chan CommandReply, 1),
+	}
 	return cmd.Send(handler.CommandChannel)
 }

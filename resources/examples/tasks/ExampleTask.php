@@ -27,6 +27,8 @@ class ExampleTask extends PoolWorker
 			sleep(1);
 			$this->setAlive();
 		}
+		error_log("TERMINATING FROM RUN");
+		exit(0);
 	}
 }
 

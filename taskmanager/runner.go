@@ -32,8 +32,8 @@ type TaskManagerConf struct {
 	ForceTimeout int64                  `json:"force_timeout"`
 }
 
-// TaskManagerRunner is a container for Task Managers
-type TaskManagerRunner struct {
+// Runner is a container for Task Managers
+type Runner struct {
 	Conf TaskManagerConf
 	// private struct members
 	taskManagers  map[string]TaskManager
@@ -43,11 +43,11 @@ type TaskManagerRunner struct {
 }
 
 // NewRunner Returns an instance of a Task Manager Runner
-func NewRunner(taskMgrConf TaskManagerConf) (TaskManagerRunner, error) {
-	taskRunner := TaskManagerRunner{Conf: taskMgrConf}
+func NewRunner(taskMgrConf TaskManagerConf) (Runner, error) {
+	taskRunner := Runner{Conf: taskMgrConf}
 	taskRunner.taskManagers = make(map[string]TaskManager, 0)
 	taskRunner.inputCommands = make(chan Command, 10)
-	taskRunner.logger = log.New(os.Stdout, "[TaskManagerRunner] ", log.Ldate|log.Ltime)
+	taskRunner.logger = log.New(os.Stdout, "[Runner] ", log.Ldate|log.Ltime)
 
 	// load all available executable files from the path, having the wanted suffix
 	taskfiles := jqutils.Filter(jqutils.ListFiles(taskMgrConf.Path), func(v string) bool {
@@ -75,7 +75,7 @@ func NewRunner(taskMgrConf TaskManagerConf) (TaskManagerRunner, error) {
 			return taskRunner, errors.New("Cannot find task " + taskname)
 		}
 		task.AutoStart = true
-		task.CopyFrom(autotask)
+		task.CopyFrom(autotask, taskMgrConf.Path)
 		taskRunner.taskManagers[taskname] = task
 	}
 
@@ -83,7 +83,7 @@ func NewRunner(taskMgrConf TaskManagerConf) (TaskManagerRunner, error) {
 }
 
 // Run a task, and keep its workers at the desired cardinality
-func (taskRunner *TaskManagerRunner) Run() {
+func (taskRunner *Runner) Run() {
 	//runtime.GOMAXPROCS(runtime.NumCPU())
 	runtime.GOMAXPROCS(2*len(taskRunner.taskManagers) + 2)
 
@@ -124,7 +124,9 @@ func (taskRunner *TaskManagerRunner) Run() {
 			taskRunner.taskManagers[name] = task
 			// auto-start
 			go func(t TaskManager, ch chan Command) {
-				t.Run(ch, Command{Type: "start", Name: name, ReplyChannel: make(chan CommandReply, 1)})
+				replyChan := make(chan CommandReply, 1)
+				t.Start(ch, Command{Type: "start", ReplyChannel: replyChan})
+				t.logger.Println(<-replyChan)
 			}(task, taskRunner.taskCommands[name])
 		}
 	}
@@ -145,7 +147,7 @@ func (taskRunner *TaskManagerRunner) Run() {
 }
 
 // ListTasks - List available tasks
-func (taskRunner *TaskManagerRunner) ListTasks() []string {
+func (taskRunner *Runner) ListTasks() []string {
 	tasks := make([]string, 0)
 	for name, _ := range taskRunner.taskManagers {
 		tasks = append(tasks, name)
@@ -156,7 +158,7 @@ func (taskRunner *TaskManagerRunner) ListTasks() []string {
 
 // Deal with a single command at a time (it might need to be forwarded
 // to the command channel of a specific task manager)
-func (taskRunner *TaskManagerRunner) processCommand(cmd Command) bool {
+func (taskRunner *Runner) processCommand(cmd Command) bool {
 	if !taskRunner.validateCommand(cmd) {
 		return false
 	}
@@ -174,29 +176,33 @@ func (taskRunner *TaskManagerRunner) processCommand(cmd Command) bool {
 	case "start":
 		task, _ := taskRunner.taskManagers[cmd.TaskName]
 		if !task.Active {
+			// fresh command channel to avoid getting messages from a previous task instance
+			taskRunner.taskCommands[cmd.TaskName] = make(chan Command, 10)
 			task.Active = true
 			taskRunner.taskManagers[cmd.TaskName] = task
-			go task.Run(taskRunner.taskCommands[cmd.TaskName], cmd)
+			go func(ch chan Command) {
+				replyChan := make(chan CommandReply, 1)
+				task.Start(ch, Command{Type: "start", ReplyChannel: replyChan})
+				task.logger.Println(<-replyChan)
+			}(taskRunner.taskCommands[cmd.TaskName])
+			cmd.Success("Started task" + cmd.TaskName)
 			return true
 		}
-		return cmd.Success("[TaskManagerRunner] Already running " + cmd.TaskName)
+		return cmd.Success("[Runner] Already running " + cmd.TaskName)
 	case "status":
 		if "" == cmd.TaskName {
+			taskRunner.logger.Println(taskRunner.getChannelsOfActiveTasks())
 			return cmd.Broadcast(taskRunner.getChannelsOfActiveTasks())
 		}
 	case "stopped":
 		task := taskRunner.taskManagers[cmd.TaskName]
 		task.Active = false
 		taskRunner.taskManagers[cmd.TaskName] = task
-		return cmd.Success("[TaskManagerRunner] Received 'stopped' notification from task")
-	case "stop", "kill":
+		return cmd.Success("[Runner] Received 'stopped' notification from task")
+	case "stop":
 		// mark active tasks as inactive first, then forward the STOP cmd
 		if "" == cmd.TaskName {
 			taskChannels := taskRunner.getChannelsOfActiveTasks()
-			if "kill" == cmd.Type {
-				// kill all tasks with workers, even those marked as inactive
-				taskChannels = taskRunner.taskCommands
-			}
 			for name, task := range taskRunner.taskManagers {
 				if task.Active {
 					task.Active = false
@@ -217,7 +223,7 @@ func (taskRunner *TaskManagerRunner) processCommand(cmd Command) bool {
 }
 
 // Validate a command before executing/forwarding it
-func (taskRunner *TaskManagerRunner) validateCommand(cmd Command) bool {
+func (taskRunner *Runner) validateCommand(cmd Command) bool {
 	// step 1: verify it's a known command
 	switch cmd.Type {
 	case "list", "listworkers", "set", "start", "status", "stop", "stopped", "kill":
@@ -261,11 +267,13 @@ func (taskRunner *TaskManagerRunner) validateCommand(cmd Command) bool {
 }
 
 // Filter command channels by active task status
-func (taskRunner *TaskManagerRunner) getChannelsOfActiveTasks() map[string]chan Command {
-	channels := make(map[string]chan Command)
+func (taskRunner *Runner) getChannelsOfActiveTasks() map[int]chan Command {
+	channels := make(map[int]chan Command)
+	i := 0
 	for name, task := range taskRunner.taskManagers {
 		if task.Active {
-			channels[name] = taskRunner.taskCommands[name]
+			channels[i] = taskRunner.taskCommands[name]
+			i++
 		}
 	}
 	return channels

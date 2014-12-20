@@ -11,7 +11,7 @@ import (
 )
 
 func readConfig(filename string) taskmanager.TaskManagerConf {
-	fmt.Println("TaskManagerConf factory()")
+	//fmt.Println("TaskManagerConf factory()")
 	b, err := ioutil.ReadFile(filename)
 	if err != nil {
 		fmt.Println("Cannot read configuration file ", filename)
@@ -48,6 +48,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("Starting task manager runner...")
+	//fmt.Println("Starting task manager runner...")
 	taskRunner.Run()
 }

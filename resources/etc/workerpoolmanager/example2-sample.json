@@ -11,8 +11,9 @@
 	"path": "/path/to/example/tasks/",
 	"filesuffix": "Task",
 	"autotasks": {
-		"Go": {
-			"cardinality": 1
+		"GoExample": {
+			"cardinality": 1,
+			"capture_output": true
 		}
 	}
 }
