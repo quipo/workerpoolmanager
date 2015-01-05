@@ -186,26 +186,33 @@ Note the signal handler (to catch SIGTERM signals and terminate gracefully) and 
 ## Design
 
 1. Task Runner 
-   * holds a reference of all the available tasks
+   * holds a list of all the available tasks
    * keeps an open channel to communicate with each Task Manager
    * keeps a command channel to communicate with the Signal and HTTP handlers
 
 2. Task Manager
-   * holds a reference of all the running workers
+   * holds a list of all the running workers
    * keeps an open channel to communicate with the Task Runner
-   * has a ticker to regularly check for stalled workers
+   * keeps an open channel to send commands to each worker
+   * keeps a feedback channel to get messages from all workers
 
-3. Signal Handler
+3. Worker
+   * waits on the process to capture when it exits/dies
+   * has a ticker to regularly check if the process stalled (i.e. running but not sending keep-alives)
+   * keeps an open channel to receive commands from the parent Task Manager
+   * keeps a keep-alive channel to receive keep-alives from the parent Task Manager 
+
+4. Signal Handler
    * Detects CTRL+C signals and asks the Task Runner to terminate
 
-4. Keep-alive Handler
+5. Keep-alive Handler
    * Listens for worker keep-alive messages on a ZMQ PubSub channel
    * Asks the Task Manager to update the workers' last-seen-alive datetime
 
-5. HTTP Handler
+6. HTTP Handler
    * Listens for requests to list, start and stop Task Managers, or change the cardinality of their workers
 
-6. Console App / HTTP client
+7. Console App / HTTP client
    * Tools/Libraries to communicate with the HTTP Handler, to get the status and control the Task Managers. 
 
 
@@ -222,12 +229,17 @@ Note the signal handler (to catch SIGTERM signals and terminate gracefully) and 
 |        |      |     |----------------|     \         |   PubSub   |              |
 |        |------+---- |      ...       |      \    +----------+----------+-----+----------+
 |        |      |     |----------------|       +---| Worker 1 | Worker 2 | ... | Worker N |
-|        |      +---- | Task Manager N |        \  +----------+----------+-----+----------+
-|        |            +----------------+         \         ^        ^            ^
-|        |                    |                   \        |        |            |
-|        |                    |                    \      +-------------------------+
-|        |                    |                     +-----| Stalled Worker Detector |
-|        |                    |                           +-------------------------+
+|        |      +---- | Task Manager N |           +----------+----------+-----+----------+
+|        |            +----------------+              |    \                
+|        |                    |                       |     \               
+|        |                    |                 +----------+ \ +---------+
+|        |                    |                 | Stalled  |  \| syswait |
+|        |                    |                 | Worker   |   |   on    |
+|        |                    |                 | Detector |   | process |
+|        |                    |                 +----------+   +---------+
+|        |                    |
+|        |                    |
+|        |                    |
 |  Task  |  Cmd Channel       v
 | Runner |════════════════════════════════════════════
 |        |                    ^             ^
