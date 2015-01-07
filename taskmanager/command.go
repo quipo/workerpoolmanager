@@ -159,7 +159,7 @@ func (cmd Command) Send(outChannel chan Command) string {
 	messages := make([]string, 0)
 	for resp := range cmd.ReplyChannel {
 		if nil != resp.Error {
-			messages = append(messages, resp.Error)
+			messages = append(messages, resp.Error.Error())
 		} else {
 			messages = append(messages, resp.Reply)
 		}
