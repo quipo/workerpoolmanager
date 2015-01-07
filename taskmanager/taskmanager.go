@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -305,6 +306,7 @@ func (task *TaskManager) ListWorkers() []string {
 		for reply := range replyCh {
 			replies = append(replies, reply.Reply)
 		}
+		sort.Strings(replies)
 	}
 	return replies
 }

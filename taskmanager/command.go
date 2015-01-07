@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -154,13 +156,14 @@ func (cmd *Command) Forward(outChannel chan Command) bool {
 // Send the Command and get the response(s) as string
 func (cmd Command) Send(outChannel chan Command) string {
 	cmd.SafeSend(outChannel)
-	var msg string
+	messages := make([]string, 0)
 	for resp := range cmd.ReplyChannel {
-		if resp.Error != nil {
-			msg = fmt.Sprintf("%s%s\n", msg, resp.Error)
+		if nil != resp.Error {
+			messages = append(messages, resp.Error)
 		} else {
-			msg = fmt.Sprintf("%s%s\n", msg, resp.Reply)
+			messages = append(messages, resp.Reply)
 		}
 	}
-	return msg
+	sort.Strings(messages)
+	return strings.Join(messages, "\n") + "\n"
 }
