@@ -335,11 +335,17 @@ func (task *TaskManager) Set(cmd Command) {
 	cmd.SafeReply(CommandReply{Reply: msg, Error: err})
 }
 
-// utility method
+// utility method to convert a map to a string, keeping the keys sorted
 func mapToString(m map[string]string) string {
+	keys := make([]string, 0, len(m))
+	for k, _ := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
 	msg := ""
-	for k, v := range m {
-		msg = fmt.Sprintf("%s%s:\t%s\n", msg, k, v)
+	for _, k := range keys {
+		msg = fmt.Sprintf("%s%s:\t%s\n", msg, k, m[k])
 	}
 	return msg
 }
