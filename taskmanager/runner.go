@@ -148,7 +148,7 @@ func (taskRunner *Runner) Run() {
 
 // ListTasks - List available tasks
 func (taskRunner *Runner) ListTasks() []string {
-	tasks := make([]string, 0)
+	var tasks []string
 	for name, _ := range taskRunner.taskManagers {
 		tasks = append(tasks, name)
 	}

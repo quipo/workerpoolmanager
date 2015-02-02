@@ -7,7 +7,7 @@ import (
 
 // ListFiles lists all the files in a given directory
 func ListFiles(dir string) []string {
-	filenames := make([]string, 0)
+	var filenames []string
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		fmt.Println(err)
@@ -21,7 +21,7 @@ func ListFiles(dir string) []string {
 
 // Filter elements in a string array with a certain function
 func Filter(vs []string, f func(string) bool) []string {
-	vsf := make([]string, 0)
+	var vsf []string
 	for _, v := range vs {
 		if f(v) {
 			vsf = append(vsf, v)

@@ -43,7 +43,7 @@ func ZmqPubSubProxy(host string, portIn int, portOut int, logger *log.Logger) {
 
 // ZmqRecvMulti Receives a multi-part message and return it as a slice of strings
 func ZmqRecvMulti(s *zmq.Socket) []string {
-	msg := make([]string, 0)
+	var msg []string
 	more := true
 	for more {
 		part, _ := s.Recv(0)

@@ -423,7 +423,7 @@ func (task *TaskManager) MaintainWorkerCardinality() error {
 	extraWorkers := len(task.workerChannels) - task.Cardinality
 	if extraWorkers > 0 {
 		// cardinality has been reduced, stop some workers
-		pids := make([]int, 0)
+		var pids []int
 		// get reference to a random worker
 		for pid, _ := range task.workerChannels {
 			pids = append(pids, pid)

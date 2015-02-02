@@ -72,6 +72,7 @@ func (cmd *Command) Success(msg string) bool {
 	return true
 }
 
+// SafeReply sends a reply but recovers from the panic if the output channel is closed
 func (cmd *Command) SafeReply(reply CommandReply) error {
 	var err error
 	defer func() {
@@ -156,7 +157,7 @@ func (cmd *Command) Forward(outChannel chan Command) bool {
 // Send the Command and get the response(s) as string
 func (cmd Command) Send(outChannel chan Command) string {
 	cmd.SafeSend(outChannel)
-	messages := make([]string, 0)
+	var messages []string
 	for resp := range cmd.ReplyChannel {
 		if nil != resp.Error {
 			messages = append(messages, resp.Error.Error())
