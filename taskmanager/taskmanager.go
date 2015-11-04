@@ -338,7 +338,7 @@ func (task *TaskManager) Set(cmd Command) {
 // utility method to convert a map to a string, keeping the keys sorted
 func mapToString(m map[string]string) string {
 	keys := make([]string, 0, len(m))
-	for k, _ := range m {
+	for k := range m {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
@@ -353,7 +353,7 @@ func mapToString(m map[string]string) string {
 // StopWorkers asks all workers for this task to stop and waits for them to terminate
 func (task *TaskManager) StopWorkers() {
 	pids := make([]int, 0, len(task.workerChannels))
-	for pid, _ := range task.workerChannels {
+	for pid := range task.workerChannels {
 		pids = append(pids, pid)
 	}
 	task.StopWorkersByPid(pids)
@@ -425,7 +425,7 @@ func (task *TaskManager) MaintainWorkerCardinality() error {
 		// cardinality has been reduced, stop some workers
 		var pids []int
 		// get reference to a random worker
-		for pid, _ := range task.workerChannels {
+		for pid := range task.workerChannels {
 			pids = append(pids, pid)
 			if len(pids) == extraWorkers {
 				break
