@@ -4,8 +4,8 @@ Release:   %{_release}%{?dist}
 Summary:   Task / worker pool manager in Go
 
 Group:     Applications/Services
-License:   MediaSift Internal License
-URL:       https://github.com/datasift/ms-service-linkresolver
+License:   MIT
+URL:       https://github.com/quipo/workerpoolmanager
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-%(%{__id_u} -n)
 
