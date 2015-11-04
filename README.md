@@ -281,5 +281,5 @@ Lorenzo Alberton
 
 ## License
 
-This repository is Copyright (c) 2014 Lorenzo Alberton, All rights reserved.
+This repository is Copyright (c) 2014-2015 Lorenzo Alberton, All rights reserved.
 It is licensed under the MIT license. Please see the [LICENSE](LICENSE) file for applicable license terms.

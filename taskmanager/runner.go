@@ -142,14 +142,14 @@ func (taskRunner *Runner) Run() {
 		}
 	}
 
-	taskRunner.logger.Println("terminating")
-	os.Exit(0)
+	//taskRunner.logger.Println("terminating")
+	//os.Exit(0)
 }
 
 // ListTasks - List available tasks
 func (taskRunner *Runner) ListTasks() []string {
 	var tasks []string
-	for name, _ := range taskRunner.taskManagers {
+	for name := range taskRunner.taskManagers {
 		tasks = append(tasks, name)
 	}
 	sort.Strings(tasks)
