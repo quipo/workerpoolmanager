@@ -1,5 +1,6 @@
 # Task / worker pool manager in Go
 
+[![Build Status](https://travis-ci.org/quipo/workerpoolmanager.png?branch=master)](https://travis-ci.org/quipo/workerpoolmanager) 
 [![GoDoc](https://godoc.org/github.com/quipo/workerpoolmanager/taskmanager?status.svg)](https://godoc.org/github.com/quipo/workerpoolmanager/taskmanager)
 
 - Start cli tasks automatically 
