@@ -53,6 +53,22 @@ func ZmqRecvMulti(s *zmq.Socket) []string {
 	return msg
 }
 
+// ZmqReadPartN reads a multi-part message but only
+// writes the requested part into the provided buffer
+func ZmqReadPartN(s *zmq.Socket, n int, buf *[]byte) {
+	more := true
+	partN := 0
+	for more {
+		if partN == n {
+			*buf, _ = s.RecvBytes(0)
+		} else {
+			_, _ = s.RecvBytes(0) // ignore
+		}
+		partN++
+		more, _ = s.GetRcvmore()
+	}
+}
+
 // ZmqSendMulti Sends a slice of strings as a multi-part message
 func ZmqSendMulti(s *zmq.Socket, msg []string) {
 	lastIdx := len(msg) - 1

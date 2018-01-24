@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/quipo/goprofiler/profiler"
 	"github.com/quipo/workerpoolmanager/taskmanager"
 )
 
@@ -40,6 +41,11 @@ func main() {
 	//fmt.Println("CONF: ", *configuration)
 
 	taskMgrConf := readConfig(*configuration)
+
+	prof := profiler.NewProfiler(taskMgrConf.Profiler)
+	go prof.Run()
+	defer prof.Stop()
+
 	taskRunner, err := taskmanager.NewRunner(taskMgrConf)
 	//os.Exit(1)
 

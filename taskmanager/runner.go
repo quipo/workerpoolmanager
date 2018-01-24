@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/quipo/goprofiler/profiler"
 	jqutils "github.com/quipo/workerpoolmanager/utils"
 )
 
@@ -30,6 +31,7 @@ type TaskManagerConf struct {
 	Autotasks    map[string]TaskManager `json:"autotasks,omitempty"`
 	Keepalives   KeepAliveConf          `json:"keepalives,omitempty"`
 	ForceTimeout int64                  `json:"force_timeout"`
+	Profiler     profiler.Config        `json:"profiler"`
 }
 
 // Runner is a container for Task Managers
@@ -132,11 +134,12 @@ func (taskRunner *Runner) Run() {
 	}
 
 	// loop forever, checking status/update commands
+	var cmd Command
 	for {
 		select {
-		case command := <-taskRunner.inputCommands:
-			taskRunner.logger.Println("Received command:", command)
-			taskRunner.processCommand(command)
+		case cmd = <-taskRunner.inputCommands:
+			taskRunner.logger.Println("Received command:", cmd)
+			taskRunner.processCommand(cmd)
 		case <-time.After(10 * time.Second):
 			taskRunner.logger.Println("Checking update commands")
 		}

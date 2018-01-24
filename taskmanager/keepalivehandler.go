@@ -60,14 +60,15 @@ func (handler *JobqueueKeepAliveHandler) Run(keepalives chan<- KeepAlive) {
 	defer close(keepalives)
 
 	handler.Logger.Println("waiting for message for topic", handler.Topic)
+	var keepaliveMsg []byte
 	for {
 		sockets, _ := poller.Poll(5 * time.Second)
 		for _, socket := range sockets {
 			switch s := socket.Socket; s {
 			case receiver:
-				msg := wpmutils.ZmqRecvMulti(s)
 				var keepalive KeepAlive
-				err := json.Unmarshal([]byte(msg[1]), &keepalive)
+				wpmutils.ZmqReadPartN(s, 1, &keepaliveMsg)
+				err := json.Unmarshal(keepaliveMsg, &keepalive)
 				if err != nil {
 					handler.Logger.Println("Error decoding json string:", err)
 					continue
