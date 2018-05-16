@@ -1,6 +1,6 @@
 package utils
 
-import(
+import (
 	"fmt"
 	"net"
 	"reflect"
@@ -46,7 +46,7 @@ func TestZmqReadPartN(t *testing.T) {
 
 		var buf []byte
 		ZmqReadPartN(receiver, 1, &buf)
-		chRes<-buf
+		chRes <- buf
 		close(chRes)
 	}(port, chRes)
 
@@ -66,7 +66,7 @@ func TestZmqReadPartN(t *testing.T) {
 		sender.SendBytes([]byte(`dummy`), 0)
 	}(port, expected)
 
-	actual := <- chRes
+	actual := <-chRes
 	if !reflect.DeepEqual(actual, expected) {
 		t.Errorf("Was expecting the 2nd part of the message (%s), got '%s'", string(expected), string(actual))
 	}

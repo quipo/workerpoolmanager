@@ -136,6 +136,7 @@ Load the packages:
 go get github.com/codegangsta/martini
 go get github.com/bobappleyard/readline
 go get github.com/pebbe/zmq4
+go get github.com/quipo/goprofiler/profiler
 
 # install packages
 go get github.com/quipo/workerpoolmanager
