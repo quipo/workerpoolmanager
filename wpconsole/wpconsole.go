@@ -125,7 +125,7 @@ func getHelp() string {
 	- stop [<taskname>]
 	     Stop all running task managers, or a specific one
 	- set <taskname> cardinality <num>
-	     Set the number of workers for a specific task manager 
+	     Set the number of workers for a specific task manager
 	- lw <taskname>, listworkers <taskname>
 	     List the status of each running worker process for a specific task manager
 	- quit, exit

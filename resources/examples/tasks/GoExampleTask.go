@@ -28,8 +28,6 @@ func handleSigterm(done chan<- int, logger *log.Logger) {
 	}()
 }
 
-var logger *log.Logger
-
 func main() {
 	mypid := os.Getpid()
 	logger := log.New(os.Stdout, fmt.Sprintf("[GoExampleTask][%d] ", mypid), log.Ldate|log.Ltime)

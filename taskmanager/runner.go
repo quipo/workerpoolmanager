@@ -47,7 +47,7 @@ type Runner struct {
 // NewRunner Returns an instance of a Task Manager Runner
 func NewRunner(taskMgrConf TaskManagerConf) (Runner, error) {
 	taskRunner := Runner{Conf: taskMgrConf}
-	taskRunner.taskManagers = make(map[string]TaskManager, 0)
+	taskRunner.taskManagers = make(map[string]TaskManager)
 	taskRunner.inputCommands = make(chan Command, 10)
 	taskRunner.logger = log.New(os.Stdout, "[Runner] ", log.Ldate|log.Ltime)
 

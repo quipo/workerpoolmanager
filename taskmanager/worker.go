@@ -245,7 +245,7 @@ func (w *Worker) Stop(replyChan chan<- CommandReply) {
 		err = nil
 		msg = fmt.Sprintf("Worker process %d terminated gracefully", w.Pid)
 		if state2, ok := cmd.Params["state"]; ok {
-			state, ok = state2.(*os.ProcessState)
+			state, _ = state2.(*os.ProcessState)
 		}
 		if err2, ok := cmd.Params["error"]; ok {
 			if err, ok = err2.(error); ok {

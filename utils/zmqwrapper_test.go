@@ -32,7 +32,7 @@ func GetFreePort() int {
 func TestZmqReadPartN(t *testing.T) {
 	port := GetFreePort()
 
-	chRes := make(chan []byte, 0)
+	chRes := make(chan []byte)
 
 	expected := []byte(`test`)
 

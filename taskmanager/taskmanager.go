@@ -21,8 +21,8 @@ type TaskManager struct {
 	Args          []string `json:"args,omitempty"`           // cli args
 	Cardinality   int      `json:"cardinality,omitempty"`    // number of workers
 	StallTimeout  int64    `json:"stall_timeout,omitempty"`  // consider the worker dead if no keep-alives are received for this period (ms)
-	AutoStart     bool     `json:"autostart,omitempty"`      // whether to start the task automatically
 	GracePeriod   int64    `json:"grace_period,omitempty"`   // grace period (ms) before killing a worker after being asked to stop
+	AutoStart     bool     `json:"autostart,omitempty"`      // whether to start the task automatically
 	CaptureOutput bool     `json:"capture_output,omitempty"` // whether to capture the output and send it to stdout
 	Active        bool
 
@@ -107,6 +107,7 @@ func (task *TaskManager) Start(commands chan Command, cmd Command) {
 	cmd.Success("Terminated task" + task.Name)
 }
 
+/*
 func (task *TaskManager) cleanup() {
 	tick := time.NewTicker(time.Duration(task.StallTimeout) * time.Millisecond)
 
@@ -127,6 +128,7 @@ func (task *TaskManager) cleanup() {
 	tick.Stop()
 	task.feedbackChannel <- Command{Type: "stopped", TaskName: task.Name, ReplyChannel: make(chan CommandReply, 1)}
 }
+*/
 
 func (task *TaskManager) run(keepalives <-chan KeepAlive) {
 	// loop until asked to terminate
@@ -147,7 +149,7 @@ func (task *TaskManager) run(keepalives <-chan KeepAlive) {
 func (task *TaskManager) StartWorker() error {
 	// make a copy of the logger, we want a custom prefix for each worker
 	wLogger := log.New(os.Stdout, "", log.Ldate)
-	*wLogger = *task.logger
+	wLogger.SetPrefix(task.logger.Prefix())
 	w := Worker{
 		Logger:              wLogger,
 		Taskname:            task.Name,
@@ -172,7 +174,7 @@ func (task *TaskManager) StartWorker() error {
 // RunCommand runs a command on this task.
 // Results are sent to the reply channel of the command itself
 func (task *TaskManager) RunCommand(cmd Command) {
-	task.logger.Println("RunCommand()", cmd.Type, cmd.String())
+	task.logger.Println("RunCommand() with", cmd.Type, cmd.String())
 
 	// process
 	switch cmd.Type {
@@ -191,7 +193,7 @@ func (task *TaskManager) RunCommand(cmd Command) {
 		cmd.SafeReply(CommandReply{Reply: fmt.Sprintf("Stopped individual workers (%v)", pids)})
 	case "stoppedworker":
 		task.cleanWorkerReference(cmd)
-		//task.MaintainWorkerCardinality() //this conflicts with stopWorkers()
+		task.MaintainWorkerCardinality() //this conflicts with stopWorkers()
 	}
 }
 
@@ -224,8 +226,8 @@ func (task *TaskManager) cleanWorkerReference(cmd Command) {
 }
 
 func (task *TaskManager) restoreCardinality(stalled bool, died bool) {
-	if task.Active && (stalled || died) {
-		// worker died unexpectedly, or stalled => restore worker cardinality
+	if task.Active { // && (stalled || died) {
+		// worker died, stalled or exited => restore worker cardinality
 		for len(task.workerChannels) < task.Cardinality {
 			task.StartWorker()
 		}
@@ -328,7 +330,7 @@ func (task *TaskManager) Set(cmd Command) {
 				msg = "Changed workers cardinality"
 			}
 		default:
-			err = fmt.Errorf("unknown task config update command: %s\n", cmd.String())
+			err = fmt.Errorf("unknown task config update command: %s", cmd.String())
 		}
 	}
 
@@ -412,6 +414,7 @@ func (task *TaskManager) StopWorker(pid int, ch chan Command) {
 // MaintainWorkerCardinality keeps the number of workers to the desired cardinality
 func (task *TaskManager) MaintainWorkerCardinality() error {
 	// start new workers if below the wanted cardinality
+	task.logger.Println("MaintainWorkerCardinality workers from", len(task.workerChannels), "to", task.Cardinality)
 	for len(task.workerChannels) < task.Cardinality {
 		task.logger.Println("Increasing number of workers from", len(task.workerChannels), "to", task.Cardinality)
 		if err := task.StartWorker(); err != nil {

@@ -7,7 +7,7 @@
 		"stall_timeout": 2000,
 		"grace_period": 10
 	},
-	"force_timeout": 5000,
+	"force_timeout": 6000,
 	"path": "/bin",
 	"filesuffix": "",
 	"autotasks": {
